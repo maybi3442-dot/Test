@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오늘의 점매추 - 직장인 점심 메뉴 강제 추천</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Pretendard -->
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes pulse-fast {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-fast {
+            animation: pulse-fast 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-amber-50 via-orange-100 to-amber-100 min-h-screen flex flex-col justify-between text-amber-950">
+
+    <header class="w-full py-4 px-6 text-center">
+        <div class="flex justify-center items-center gap-3 mb-1.5 text-xs font-semibold text-amber-900/70">
+            <!-- Weather Display Badge -->
+            <div id="weather-badge" class="bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-xs border border-orange-200 flex items-center gap-1.5">
+                <span>🌤️</span> <span id="weather-text">날씨 불러오는 중...</span>
+            </div>
+            <span class="bg-orange-600 text-white px-3 py-1 rounded-full uppercase tracking-wider font-bold shadow-xs">직장인 강제 추천</span>
+        </div>
+        
+        <h1 class="text-3xl sm:text-4xl font-extrabold mt-1 tracking-tight text-amber-950 flex items-center justify-center gap-3">
+            <span>🥗</span> 오늘의 점매추 <span>🍲</span>
+        </h1>
+        <p class="text-xs text-amber-900/80 mt-1 font-medium">직접 메뉴를 검색하거나 5초 룰 타이머로 강제 확정받으세요!</p>
+
+        <!-- Top Search Bar for Direct Food Searching -->
+        <div class="max-w-md mx-auto mt-3 relative">
+            <div class="flex items-center bg-white/95 backdrop-blur-sm rounded-full shadow-md border border-orange-200 px-3 py-1.5 focus-within:ring-2 focus-within:ring-orange-500 transition-all">
+                <span class="text-orange-600 ml-1 mr-2 text-base">🔍</span>
+                <input type="text" id="direct-search-input" placeholder="먹고 싶은 메뉴 직접 검색 (예: 초밥, 햄버거)" class="w-full bg-transparent text-xs sm:text-sm text-amber-950 placeholder-amber-900/40 focus:outline-none" onkeypress="handleSearchKeyPress(event)">
+                <button onclick="executeDirectSearch()" class="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-xs transition-all whitespace-nowrap">
+                    검색
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col items-center justify-center px-4 max-w-md mx-auto w-full pb-6">
+        
+        <!-- Mood Selector Section -->
+        <div class="w-full mb-2.5">
+            <label class="block text-[11px] font-bold text-amber-900/80 mb-1.5 uppercase tracking-wide text-center">오늘 기분은 어떠신가요?</label>
+            <div class="grid grid-cols-4 gap-1.5">
+                <button onclick="setMood('all')" id="mood-all" class="mood-btn py-1.5 px-1 rounded-xl text-[11px] font-semibold transition-all bg-orange-600 text-white shadow-sm flex flex-col items-center gap-0.5">
+                    <span class="text-sm">✨</span>
+                    <span>상관없음</span>
+                </button>
+                <button onclick="setMood('스트레스')" id="mood-스트레스" class="mood-btn py-1.5 px-1 rounded-xl text-[11px] font-semibold transition-all bg-white/90 text-amber-900 hover:bg-orange-100 border border-orange-200 flex flex-col items-center gap-0.5">
+                    <span class="text-sm">🤯</span>
+                    <span>스트레스</span>
+                </button>
+                <button onclick="setMood('우울')" id="mood-우울" class="mood-btn py-1.5 px-1 rounded-xl text-[11px] font-semibold transition-all bg-white/90 text-amber-900 hover:bg-orange-100 border border-orange-200 flex flex-col items-center gap-0.5">
+                    <span class="text-sm">🌧️</span>
+                    <span>우울/기운</span>
+                </button>
+                <button onclick="setMood('기쁨')" id="mood-기쁨" class="mood-btn py-1.5 px-1 rounded-xl text-[11px] font-semibold transition-all bg-white/90 text-amber-900 hover:bg-orange-100 border border-orange-200 flex flex-col items-center gap-0.5">
+                    <span class="text-sm">🥳</span>
+                    <span>기쁨/축하</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Category Filter Tabs -->
+        <div class="flex flex-wrap justify-center gap-1.5 mb-3 w-full">
+            <button onclick="setCategory('all')" id="cat-all" class="category-btn px-3 py-1 rounded-full text-[11px] font-semibold transition-all bg-orange-600 text-white shadow-sm">전체</button>
+            <button onclick="setCategory('한식')" id="cat-한식" class="category-btn px-3 py-1 rounded-full text-[11px] font-semibold transition-all bg-white/90 text-amber-900 hover:bg-orange-100 border border-orange-200">한식</button>
+            <button onclick="setCategory('중식')" id="cat-중식" class="category-btn px-3 py-1 rounded-full text-[11px] font-semibold transition-all bg-white/90 text-amber-900 hover:bg-orange-100 border border-orange-200">중식</button>
+            <button onclick="setCategory('일식')" id="cat-일식" class="category-btn px-3 py-1 rounded-full text-[11px] font-semibold transition-all bg-white/90 text-amber-900 hover:bg-orange-100 border border-orange-200">일식</button>
+            <button onclick="setCategory('양식')" id="cat-양식" class="category-btn px-3 py-1 rounded-full text-[11px] font-semibold transition-all bg-white/90 text-amber-900 hover:bg-orange-100 border border-orange-200">양식</button>
+        </div>
+
+        <!-- Result Display Card with Timer -->
+        <div id="result-card" class="w-full bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-orange-200 text-center mb-3.5 transition-all overflow-hidden relative">
+            <div id="category-badge" class="absolute top-3 left-4 z-10 text-[11px] font-bold text-orange-900 bg-orange-100/90 px-2.5 py-0.5 rounded-full shadow-xs">추천 대기중</div>
+            
+            <!-- 5-Second Timer Badge (Hidden by default) -->
+            <div id="timer-badge" class="hidden absolute top-3 right-4 z-10 text-[11px] font-extrabold text-white bg-rose-600 px-2.5 py-0.5 rounded-full shadow-md animate-pulse-fast">
+                ⏳ 남은 시간: <span id="timer-count">5</span>초
+            </div>
+            
+            <!-- Food Image Preview -->
+            <div class="w-full h-32 bg-orange-100 relative overflow-hidden">
+                <img id="food-image" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80" alt="점심 메뉴 사진" class="w-full h-full object-cover transition-all duration-500" onerror="this.src='https://placehold.co/600x400/fed7aa/7c2d12?text=Delicious+Food'">
+                <div class="absolute inset-0 bg-gradient-to-t from-amber-950/40 via-transparent to-transparent"></div>
+                <span id="menu-emoji" class="absolute bottom-2 left-3 text-2xl">😋</span>
+            </div>
+
+            <div id="result-content" class="p-3.5">
+                <h2 id="menu-title" class="text-xl sm:text-2xl font-extrabold text-amber-950 tracking-tight">버튼을 눌러주세요!</h2>
+                <p id="menu-reason" class="text-[11px] text-amber-900/80 mt-0.5 mb-2.5 font-medium">오늘의 기분과 날씨에 딱 어울리는 메뉴를 강제 확정해 드립니다.</p>
+                
+                <!-- Naver Map Link Button with Larger Text -->
+                <a id="naver-map-btn" href="https://map.naver.com" target="_blank" class="hidden inline-flex items-center justify-center gap-2 w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-base font-extrabold rounded-xl shadow-md transition-all">
+                    <span>📍 네이버 지도에서 근처 맛집 찾기</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+            </div>
+        </div>
+
+        <!-- Cute Round Action Button -->
+        <div class="w-full">
+            <button onclick="pickMenu()" id="recommend-btn" class="w-full py-3.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-extrabold text-base rounded-full shadow-lg shadow-orange-900/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                <span>점심 메뉴 5초 강제추천 받기</span>
+                <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        // Menu dataset with food image links and search queries for Naver Map
+        const menuDatabase = [
+            { name: "마라탕", category: "중식", mood: "스트레스", weather: ["비", "흐림", "맑음"], emoji: "🔥", reason: "매운 국물로 스트레스를 확 날려버리세요!", img: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80", query: "마라탕" },
+            { name: "제육볶음", category: "한식", mood: "스트레스", weather: ["맑음", "흐림", "비", "눈", "추움"], emoji: "🥩", reason: "매콤달콤한 불향 가득한 직장인 소울 푸드!", img: "https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=600&q=80", query: "제육볶음" },
+            { name: "짬뽕", category: "중식", mood: "스트레스", weather: ["비", "눈", "추움"], emoji: "🌶️", reason: "얼큰하고 진한 국물이 머릿속까지 시원하게 해줘요.", img: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80", query: "짬뽕 맛집" },
+            { name: "떡볶이", category: "분식", mood: "스트레스", weather: ["비", "흐림", "맑음"], emoji: "🥘", reason: "매콤달달 자극적인 맛으로 화난 마음을 달래보세요.", img: "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=600&q=80", query: "떡볶이" },
+            { name: "국밥", category: "한식", mood: "우울", weather: ["비", "눈", "추움"], emoji: "🍚", reason: "뜨끈하고 진한 국물로 속을 든든하게 채워보세요.", img: "https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=600&q=80", query: "국밥" },
+            { name: "삼겹살", category: "한식", mood: "우울", weather: ["맑음", "흐림", "비", "눈", "더움", "추움"], emoji: "🥓", reason: "기분이 저기거릴 땐 고기 앞으로 가야 합니다!", img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80", query: "삼겹살" },
+            { name: "칼국수", category: "한식", mood: "우울", weather: ["비", "눈", "흐림", "추움"], emoji: "🍜", reason: "따뜻한 면발과 깔끔한 국물이 마음을 포근하게 해줘요.", img: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80", query: "칼국수" },
+            { name: "돈카츠", category: "일식", mood: "우울", weather: ["맑음", "흐림"], emoji: "🍛", reason: "바삭바삭한 식감과 두툼한 고기로 기분 전환!", img: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=600&q=80", query: "돈카츠" },
+            { name: "초밥", category: "일식", mood: "기쁨", weather: ["맑음", "더움"], emoji: "🍣", reason: "기분 좋은 날엔 깔끔하고 고급스러운 초밥 어떠세요?", img: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=600&q=80", query: "초밥" },
+            { name: "파스타", category: "양식", mood: "기쁨", weather: ["맑음", "흐림"], emoji: "🍝", reason: "근사하고 향긋한 파스타로 기분 좋은 파티를!", img: "https://images.unsplash.com/photo-1621996346565-e3d5d6281298?auto=format&fit=crop&w=600&q=80", query: "파스타" },
+            { name: "피자", category: "양식", mood: "기쁨", weather: ["맑음", "비", "눈", "흐림", "더움", "추움"], emoji: "🍕", reason: "풍성한 토핑과 치즈로 행복함을 두 배로!", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80", query: "피자" },
+            { name: "스테이크", category: "양식", mood: "기쁨", weather: ["맑음"], emoji: "🥩", reason: "오늘 같은 날은 근사하게 스테이크로 플렉스!", img: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80", query: "스테이크" },
+            { name: "김치찌개", category: "한식", mood: "상관없음", weather: ["비", "흐림", "추움"], emoji: "🍲", reason: "비 오거나 쌀쌀한 날엔 역시 칼칼한 김치찌개!", img: "https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=600&q=80", query: "김치찌개" },
+            { name: "된장찌개", category: "한식", mood: "상관없음", weather: ["맑음", "흐림"], emoji: "🥘", reason: "구수하고 깊은 맛으로 속 편안한 점심 식사.", img: "https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=600&q=80", query: "된장찌개" },
+            { name: "비빔밥", category: "한식", mood: "상관없음", weather: ["맑음", "더움"], emoji: "🥗", reason: "신선한 야채가 듬뿍 들어가 가볍고 건강한 한 끼.", img: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80", query: "비빔밥" },
+            { name: "짜장면", category: "중식", mood: "상관없음", weather: ["맑음", "흐림"], emoji: "🥢", reason: "언제 먹어도 맛있는 국민 배달 메뉴!", img: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80", query: "짜장면" },
+            { name: "라멘", category: "일식", mood: "상관없음", weather: ["비", "눈", "추움"], emoji: "🍜", reason: "진한 사골 육수와 쫄깃한 면발의 조화.", img: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80", query: "라멘" },
+            { name: "햄버거", category: "양식", mood: "상관없음", weather: ["맑음", "비"], emoji: "🍔", reason: "빠르고 든든하게 즐길 수 있는 최고의 선택.", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80", query: "수제버거" }
+        ];
+
+        let currentCategory = 'all';
+        let currentMood = 'all';
+        let currentWeatherType = '맑음';
+
+        window.onload = function() {
+            detectWeather();
+        };
+
+        function detectWeather() {
+            const weatherTextEl = document.getElementById('weather-text');
+            const weatherBadge = document.getElementById('weather-badge');
+            
+            const weatherConditions = [
+                { type: '맑음', icon: '☀️', desc: '화창한 맑은 날' },
+                { type: '비', icon: '🌧️', desc: '보슬보슬 비 오는 날' },
+                { type: '추움', icon: '🥶', desc: '쌀쌀한 날씨' },
+                { type: '더움', icon: '🥵', desc: '따뜻한 날씨' },
+                { type: '흐림', icon: '☁️', desc: '구름 낀 흐린 날' }
+            ];
+
+            const selectedWeather = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
+            currentWeatherType = selectedWeather.type;
+            
+            weatherTextEl.innerText = `${selectedWeather.desc} (반영됨)`;
+            weatherBadge.innerHTML = `<span>${selectedWeather.icon}</span> <span>${selectedWeather.desc}</span>`;
+        }
+
+        function setMood(mood) {
+            currentMood = mood;
+            const buttons = document.querySelectorAll('.mood-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-orange-600', 'text-white', 'shadow-sm');
+                btn.classList.add('bg-white/90', 'text-amber-900', 'hover:bg-orange-100', 'border', 'border-orange-200');
+            });
+
+            const activeBtn = document.getElementById(`mood-${mood}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-white/90', 'text-amber-900', 'hover:bg-orange-100', 'border', 'border-orange-200');
+                activeBtn.classList.add('bg-orange-600', 'text-white', 'shadow-sm');
+            }
+        }
+
+        function setCategory(category) {
+            currentCategory = category;
+            const buttons = document.querySelectorAll('.category-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-orange-600', 'text-white', 'shadow-sm');
+                btn.classList.add('bg-white/90', 'text-amber-900', 'hover:bg-orange-100', 'border', 'border-orange-200');
+            });
+
+            const activeBtn = document.getElementById(`cat-${category}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-white/90', 'text-amber-900', 'hover:bg-orange-100', 'border', 'border-orange-200');
+                activeBtn.classList.add('bg-orange-600', 'text-white', 'shadow-sm');
+            }
+        }
+
+        function handleSearchKeyPress(event) {
+            if (event.key === 'Enter') {
+                executeDirectSearch();
+            }
+        }
+
+        function executeDirectSearch() {
+            const searchInput = document.getElementById('direct-search-input');
+            const keyword = searchInput.value.trim();
+
+            if (!keyword) {
+                alert('검색할 메뉴 이름을 입력해주세요!');
+                return;
+            }
+
+            const menuTitle = document.getElementById('menu-title');
+            const menuEmoji = document.getElementById('menu-emoji');
+            const menuReason = document.getElementById('menu-reason');
+            const categoryBadge = document.getElementById('category-badge');
+            const resultCard = document.getElementById('result-card');
+            const foodImage = document.getElementById('food-image');
+            const naverMapBtn = document.getElementById('naver-map-btn');
+            const timerBadge = document.getElementById('timer-badge');
+
+            timerBadge.classList.add('hidden');
+            categoryBadge.innerText = `직접 검색 결과 · 🔍 ${keyword}`;
+            menuTitle.innerText = keyword;
+            menuEmoji.innerText = '🍽️';
+            menuReason.innerText = `사용자님이 직접 입력하신 '${keyword}' 메뉴입니다! 바로 근처 맛집을 검색해 보세요.`;
+            
+            // 데이터베이스에 일치하는 항목이 있으면 해당 이미지 사용, 없으면 Unsplash 기본 검색 이미지 적용
+            const foundItem = menuDatabase.find(item => item.name.includes(keyword) || keyword.includes(item.name));
+            if (foundItem) {
+                foodImage.src = foundItem.img;
+            } else {
+                foodImage.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
+            }
+
+            resultCard.classList.remove('animate-pop');
+            void resultCard.offsetWidth;
+            resultCard.classList.add('animate-pop');
+
+            // 네이버 지도 연결 활성화
+            naverMapBtn.href = `https://map.naver.com/v5/search/${encodeURIComponent(keyword)}`;
+            naverMapBtn.classList.remove('hidden');
+        }
+
+        function pickMenu() {
+            const btn = document.getElementById('recommend-btn');
+            const menuTitle = document.getElementById('menu-title');
+            const menuEmoji = document.getElementById('menu-emoji');
+            const menuReason = document.getElementById('menu-reason');
+            const categoryBadge = document.getElementById('category-badge');
+            const resultCard = document.getElementById('result-card');
+            const foodImage = document.getElementById('food-image');
+            const naverMapBtn = document.getElementById('naver-map-btn');
+            const timerBadge = document.getElementById('timer-badge');
+            const timerCount = document.getElementById('timer-count');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            naverMapBtn.classList.add('hidden');
+            timerBadge.classList.remove('hidden');
+
+            let filteredMenus = menuDatabase.filter(item => {
+                const matchCategory = (currentCategory === 'all' || item.category === currentCategory);
+                const matchMood = (currentMood === 'all' || item.mood === currentMood || item.mood === '상관없음');
+                const matchWeather = (item.weather.includes(currentWeatherType) || item.weather.includes('맑음'));
+                return matchCategory && matchMood && matchWeather;
+            });
+
+            if (filteredMenus.length === 0) {
+                filteredMenus = menuDatabase.filter(item => currentCategory === 'all' || item.category === currentCategory);
+            }
+
+            let counter = 0;
+            // 룰렛 효과 (약 1.2초간 무작위로 메뉴가 빠르게 변경됨)
+            const rollInterval = setInterval(() => {
+                const randomItem = filteredMenus[Math.floor(Math.random() * filteredMenus.length)];
+                menuTitle.innerText = randomItem.name;
+                menuEmoji.innerText = randomItem.emoji;
+                menuReason.innerText = randomItem.reason;
+                categoryBadge.innerText = `${randomItem.category} · 메뉴 추첨 중...`;
+                foodImage.src = randomItem.img;
+                counter++;
+
+                if (counter > 15) {
+                    clearInterval(rollInterval);
+                    
+                    // 최종 메뉴 당첨
+                    const finalItem = filteredMenus[Math.floor(Math.random() * filteredMenus.length)];
+                    menuTitle.innerText = finalItem.name;
+                    menuEmoji.innerText = finalItem.emoji;
+                    menuReason.innerText = finalItem.reason;
+                    categoryBadge.innerText = `${finalItem.category} · 🚨 강제 확정 대기 중!`;
+                    foodImage.src = finalItem.img;
+                    
+                    resultCard.classList.remove('animate-pop');
+                    void resultCard.offsetWidth;
+                    resultCard.classList.add('animate-pop');
+
+                    // 5초 카운트다운 타이머 시작
+                    let timeLeft = 5;
+                    timerCount.innerText = timeLeft;
+
+                    const countdownInterval = setInterval(() => {
+                        timeLeft--;
+                        timerCount.innerText = timeLeft;
+
+                        if (timeLeft <= 0) {
+                            clearInterval(countdownInterval);
+                            
+                            // 5초 종료! 화면 고정
+                            timerBadge.classList.add('hidden');
+                            categoryBadge.innerText = `${finalItem.category} · 🔒 메뉴 고정 완료! (무조건 이거 드세요)`;
+                            
+                            // Naver Map Link Activation
+                            naverMapBtn.href = `https://map.naver.com/v5/search/${encodeURIComponent(finalItem.query)}`;
+                            naverMapBtn.classList.remove('hidden');
+
+                            // 버튼 재활성화
+                            btn.disabled = false;
+                            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                            btn.querySelector('span').innerText = '다시 뽑기 (불복 금지)';
+                        }
+                    }, 1000);
+                }
+            }, 60);
+        }
+    </script>
+</body>
+</html>
